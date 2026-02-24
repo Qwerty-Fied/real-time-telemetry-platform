@@ -1,0 +1,5 @@
+rootProject.name = "real-time-telemetry-platform"
+
+include("services:api")
+include("services:ingest")
+include("services:mqtt-producer")
