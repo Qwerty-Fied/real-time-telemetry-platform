@@ -16,6 +16,7 @@ public class MqttProducerApplication {
 	@Bean
 	CommandLineRunner runner(MqttToKafkaBridge bridge) {
 		return args -> {
+			System.out.println("[BOOT] mqttRunner started");
 			String broker = "tcp://localhost:1883";
 			String clientId = "mqtt-producer-" + System.currentTimeMillis();
 			String topicFilter = "telemetry/#";
