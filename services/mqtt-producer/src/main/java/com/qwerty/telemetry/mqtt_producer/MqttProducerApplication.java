@@ -1,6 +1,7 @@
 package com.qwerty.telemetry.mqtt_producer;
 
-import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,12 +15,16 @@ public class MqttProducerApplication {
 	}
 
 	@Bean
-	CommandLineRunner runner(MqttToKafkaBridge bridge) {
+	CommandLineRunner runner(
+			MqttToKafkaBridge bridge,
+			@Value("${app.mqtt.broker}") String broker,
+			@Value("${app.mqtt.topicFilter:telemetry/#}") String topicFilter
+	) {
 		return args -> {
 			System.out.println("[BOOT] mqttRunner started");
-			String broker = "tcp://localhost:1883";
+			System.out.println("[MQTT] connecting to " + broker);
+
 			String clientId = "mqtt-producer-" + System.currentTimeMillis();
-			String topicFilter = "telemetry/#";
 
 			MqttClient client = new MqttClient(broker, clientId, null);
 			client.connect();
@@ -32,7 +37,6 @@ public class MqttProducerApplication {
 
 			System.out.println("Subscribed to " + topicFilter);
 
-			// keep process alive
 			Thread.currentThread().join();
 		};
 	}
