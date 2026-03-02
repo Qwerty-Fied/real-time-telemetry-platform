@@ -25,6 +25,8 @@ services:
         KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
         KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
         
+        KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+        
         KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   postgres:
@@ -52,6 +54,8 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       
   telemetry-consumer:
+    ports:
+      - "18080:8080"
     build:
       context: ..
       dockerfile: services/telemetry-consumer/Dockerfile
@@ -61,3 +65,17 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_PROFILES_ACTIVE: docker
     restart: unless-stopped   
+    
+  mqtt-producer:
+    build:
+      context: ..
+      dockerfile: services/mqtt-producer/Dockerfile
+    depends_on:
+      - kafka
+      - mqtt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MQTT_BROKER_HOST: mqtt
+      MQTT_BROKER_PORT: 1883
+    restart: unless-stopped
