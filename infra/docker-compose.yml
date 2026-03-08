@@ -79,3 +79,60 @@ services:
       MQTT_BROKER_HOST: mqtt
       MQTT_BROKER_PORT: 1883
     restart: unless-stopped
+    
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    depends_on:
+      - telemetry-consumer
+      - mqtt-producer
+
+  grafana:
+    image: grafana/grafana:10.4.3
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      
+  dlq-reprocessor:
+    build:
+      context: ..
+      dockerfile: services/dlq-reprocessor/Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    restart: unless-stopped
+    
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    container_name: kafka-exporter
+    command:
+      - "--kafka.server=kafka:9092"
+      - "--group.filter=telemetry-consumer|dlq-reprocessor"
+      - "--topic.filter=telemetry.raw|telemetry.dlq|telemetry.clean"
+      - "--no-offset.show-all"
+    ports:
+      - "9308:9308"
+    depends_on:
+      - kafka
+    restart: unless-stopped
+    
+volumes:
+  prometheus_data:
+  grafana_data:
