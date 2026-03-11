@@ -11,14 +11,21 @@ public class TelemetryMetrics {
     public final Counter dlq;
     public final Counter errors;
     public final Counter dlqProduceFail;
-    public final Timer processingTimer;
+    public final Timer processing;
 
     public TelemetryMetrics(MeterRegistry registry) {
-        this.processed = Counter.builder("telemetry_processed_total").register(registry);
-        this.dlq = Counter.builder("telemetry_dlq_total").register(registry);
-        this.errors = Counter.builder("telemetry_errors_total").register(registry);
-        this.dlqProduceFail = Counter.builder("telemetry_dlq_produce_fail_total").register(registry);
-        this.processingTimer = Timer.builder("telemetry_processing_seconds").register(registry);
+        this.processed = Counter.builder("telemetry_processed_total")
+                .register(registry);
+
+        this.dlq = Counter.builder("telemetry_dlq_total")
+                .register(registry);
+
+        this.errors = Counter.builder("telemetry_errors_total")
+                .register(registry);
+
+        this.dlqProduceFail = Counter.builder("telemetry_dlq_produce_fail_total")
+                .register(registry);
+
         this.processing = Timer.builder("telemetry_processing_seconds")
                 .publishPercentileHistogram()
                 .register(registry);
