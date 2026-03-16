@@ -6,15 +6,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class TelemetryStatusService {
 
-    public TelemetryStatusResponse getStatus() {
+    private final PrometheusQueryService prometheusQueryService;
 
-        // TODO: Prometheus 또는 DB에서 실제 값 조회
+    public TelemetryStatusService(PrometheusQueryService prometheusQueryService) {
+        this.prometheusQueryService = prometheusQueryService;
+    }
+
+    public TelemetryStatusResponse getStatus() {
+        double processed = prometheusQueryService.queryValue("sum(telemetry_processed_total)");
+        double dlq = prometheusQueryService.queryValue("sum(telemetry_dlq_total)");
+        double errors = prometheusQueryService.queryValue("sum(telemetry_errors_total)");
+        double consumerLag = prometheusQueryService.queryValue("sum(kafka_consumergroup_lag_sum)");
+
+        String status = "UP";
+        if (consumerLag > 100) {
+            status = "DEGRADED";
+        }
+        if (errors > 0) {
+            status = "WARN";
+        }
+
         return new TelemetryStatusResponse(
                 "real-time-telemetry-platform",
-                "UP",
-                120,
-                3,
-                1
+                status,
+                processed,
+                dlq,
+                errors,
+                consumerLag
         );
     }
 }
